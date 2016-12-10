@@ -15,6 +15,7 @@ env:
   - BINTRAY_DESC="LAARiD metapackages"
   - BINTRAY_POOLABBR=l
   - BINTRAY_COMPONENT=main
+  - BINTRAY_ARCH=all
 
 branches:
   only:
@@ -56,7 +57,7 @@ before_deploy:
   -e "s#@BINTRAY_POOLABBR@#${BINTRAY_POOLABBR}#g" \
   -e "s#@BINTRAY_SUITE@#$(${DOCKER_EXEC_NOTTY} cat /etc/apt/sources.list | grep -m 1 '^deb ' | awk '{print $3}')#g" \
   -e "s#@BINTRAY_COMPONENT@#${BINTRAY_COMPONENT}#g" \
-  -e "s#@BINTRAY_ARCH@#$(dpkg --print-architecture)#g" | \
+  -e "s#@BINTRAY_ARCH@#${BINTRAY_ARCH}#g" | \
   tee debian/bintray.json
 
 deploy:
