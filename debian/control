@@ -4,6 +4,7 @@ Priority: optional
 Maintainer: You-Sheng Yang <vicamo@gmail.com>
 Standards-Version: 3.9.8
 Build-Depends: debhelper (>= 10.2.2)
+Description: Metapackages for LAARiD
 
 Package: laarid-minimal
 Architecture: all
