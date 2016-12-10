@@ -1,0 +1,69 @@
+dist: trusty
+sudo: required
+services:
+- docker
+language: cpp
+
+env:
+  global:
+  - IMAGE_ARCH=amd64
+  - DOCKER_EXEC_ROOT="sudo docker exec -it -u root test_container"
+  - DOCKER_EXEC="sudo docker exec -it test_container"
+  - DOCKER_EXEC_NOTTY="sudo docker exec test_container"
+  - BINTRAY_USER=laarid
+  - BINTRAY_REPO=main
+  - BINTRAY_DESC="LAARiD metapackages"
+  - BINTRAY_POOLABBR=l
+  - BINTRAY_COMPONENT=main
+
+branches:
+  only:
+  - master
+  - /^v\d+\.\d+\.\d+/
+
+addons:
+  apt:
+    sources:
+    - sourceline: 'deb http://archive.ubuntu.com/ubuntu/ devel universe'
+    packages:
+    - binfmt-support
+    - qemu-user-static
+
+cache:
+- apt
+
+before_install:
+- sudo docker run -d -i -t --name test_container -v ${TRAVIS_BUILD_DIR%${TRAVIS_REPO_SLUG}}:${TRAVIS_BUILD_DIR%${TRAVIS_REPO_SLUG}} laarid/devel:${IMAGE_ARCH} /bin/bash
+
+install:
+- ${DOCKER_EXEC_ROOT} apt-get update -qq
+- ${DOCKER_EXEC_ROOT} mk-build-deps -i -s sudo -t 'apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends -y' ${TRAVIS_BUILD_DIR}/debian/control
+
+script:
+- ${DOCKER_EXEC} /bin/sh -c "cd ${TRAVIS_BUILD_DIR}; debuild --preserve-env --preserve-envvar PATH -i -us -uc -b"
+
+before_deploy:
+- |
+  cat debian/bintray.json.in | \
+  sed -e "s#@BINTRAY_PACKAGE@#$(cat debian/control | grep ^Source: | awk '{print $2}')#g" \
+  -e "s#@BINTRAY_USER@#${BINTRAY_USER}#g" \
+  -e "s#@BINTRAY_REPO@#${BINTRAY_REPO}#g" \
+  -e "s#@BINTRAY_DESC@#${BINTRAY_DESC}#g" \
+  -e "s#@GITHUB_REPO@#${TRAVIS_REPO_SLUG}#g" \
+  -e "s,@BINTRAY_VERSION@,${TRAVIS_TAG#v},g" \
+  -e "s#@BINTRAY_RELEASE_DATE@#$(cat debian/changelog | grep -m 1 '^ -- ' | sed 's,^.*  ,,')#g" \
+  -e "s#@BINTRAY_OUTDIR@#$(dirname ${TRAVIS_BUILD_DIR})#g" \
+  -e "s#@BINTRAY_POOLABBR@#${BINTRAY_POOLABBR}#g" \
+  -e "s#@BINTRAY_SUITE@#$(${DOCKER_EXEC_NOTTY} cat /etc/apt/sources.list | grep -m 1 '^deb ' | awk '{print $3}')#g" \
+  -e "s#@BINTRAY_COMPONENT@#${BINTRAY_COMPONENT}#g" \
+  -e "s#@BINTRAY_ARCH@#$(dpkg --print-architecture)#g" | \
+  tee debian/bintray.json
+
+deploy:
+- provider: bintray
+  file: debian/bintray.json
+  user: vicamo
+  key:
+    secure: "HiMDb9xWe43W+XmhjQjoDGFD2fkA/qYYUD7dFbpRlpF8fNU/zmwHTw6di/0dwVNfv2wt268fkIiK5GzmnbR62giOtXLTEPUj/ef5gtJCg/xvt2U6j0/T5Wl4+glSq9wV0tbtnz4FWydHuQdP4avAVmbo8xYLM6Yqv442aniqhkLwxkaxRlwMhxfNouKRx/tTaQGSd+qOTTrFlGAfsbQTJptQTM9apPe2nhLHZ78qLvxvjptRIbKTEYfHRHC35JdqNVtnx5yXBhB3PIsiHrlGK2ERdwJd3TRlilgbCIdN5LQSEEATDvZ3qpvy9lh1pk+M0gBSo+BEPGDxOXqGpH92bwjAG67jUZI/p/0/NJYqu4Ukmvs1qMeCXu38kem6ZXYWH+F1jQ3z983S6IC5+vSZCINNK5c0YieLTaaz8C4+4y3GDeACow0+tbcbZTeiKYHG65fDD9Rj9DWBUEgq+6cgE3S+17L0rYt04FixNHcoXZpD/tNoM8KcfwlhYq3pZRVO+B7bOjZa/SuGzuPj4uYNgKfcIsYsZHHjA2PQsbPlcqunTc3kCq8oi5OkGu+nGDI3rnvb1DcZeRswh8cRcC5ohQVSM0JqO67miPxjWD48ye30gMB2kvZhBf1iXFLaBqveZsxN43Q/9TJP+t3BntEJIOUwajGOSWR/3Wvaymb6gDk="
+  on:
+    tags: true
