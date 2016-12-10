@@ -1,0 +1,44 @@
+Source: laarid-meta
+Section: metapackages
+Priority: optional
+Maintainer: You-Sheng Yang <vicamo@gmail.com>
+Standards-Version: 3.9.8
+Build-Depends: debhelper (>= 10.2.2)
+
+Package: laarid-minimal
+Architecture: all
+Depends: libbionic0,
+         ${misc:Depends}
+Description: Minimal runtime environment for LAARiD
+ This package depends on all the packages of a bare system:
+  - Essential runtime libraries
+  - Essential daemons like servicemanager, adbd
+
+Package: laarid
+Architecture: all
+Depends: laarid-minimal (= ${binary:Version}),
+         ${misc:Depends}
+Description: Let Android Application Run in Debian
+ This package depends on all the packages of necessary for LAARiD.
+
+Package: laarid-ndk
+Architecture: all
+Depends: libbionic0-dev,
+         ${misc:Depends}
+Description: Native development kit for LAARiD
+ This package depends on all the packages for the development of native
+ packages.
+
+Package: laarid-sdk
+Architecture: all
+Depends: ${misc:Depends}
+Description: Software development kit for LAARiD
+ This package depends on all the packages for the development of applications.
+
+Package: laarid-devel
+Architecture: all
+Depends: laarid-ndk (= ${binary:Version}),
+         laarid-sdk (= ${binary:Version}),
+         ${misc:Depends}
+Description: Full development environment for LAARiD
+ This package depends on laarid-ndk and laarid-sdk.
