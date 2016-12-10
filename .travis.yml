@@ -19,7 +19,7 @@ env:
 branches:
   only:
   - master
-  - /^v\d+\.\d+\.\d+/
+  - /^v\d+/
 
 addons:
   apt:
