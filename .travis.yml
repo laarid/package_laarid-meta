@@ -42,8 +42,8 @@ before_deploy:
   -e "s#@BINTRAY_REPO@#${BINTRAY_REPO}#g" \
   -e "s#@BINTRAY_DESC@#$(cat debian/control | grep -m1 ^Description: | cut -d ' ' -f2-)#g" \
   -e "s#@GITHUB_REPO@#${TRAVIS_REPO_SLUG}#g" \
-  -e "s,@BINTRAY_VERSION@,${TRAVIS_TAG#v},g" \
-  -e "s#@BINTRAY_RELEASE_DATE@#$(cat debian/changelog | grep -m 1 '^ -- ' | sed 's,^.*  ,,')#g" \
+  -e "s#@BINTRAY_VERSION@#$(dpkg-parsechangelog | grep ^Version: | cut -d ' ' -f 2)#g" \
+  -e "s#@BINTRAY_RELEASE_DATE@#$(date -Iseconds --date="$(dpkg-parsechangelog | grep ^Date: | cut -d ' ' -f 2-)")#g" \
   -e "s#@BINTRAY_OUTDIR@#$(dirname ${TRAVIS_BUILD_DIR})#g" \
   -e "s#@BINTRAY_POOLABBR@#$(cat debian/control | grep ^Source: | awk '{print $2}' | cut -c1)#g" \
   -e "s#@BINTRAY_SUITE@#${JOB_SUITE}#g" \
