@@ -1,3 +1,9 @@
+laarid-meta (25+buster1) buster; urgency=low
+
+  * No change rebuild for buster
+
+ -- You-Sheng Yang <vicamo@gmail.com>  Tue, 24 Oct 2017 23:46:55 +0800
+
 laarid-meta (25) testing; urgency=low
 
   * Initial release
