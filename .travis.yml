@@ -1,8 +1,6 @@
-dist: trusty
 sudo: required
 services:
 - docker
-language: cpp
 
 env:
   global:
