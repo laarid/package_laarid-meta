@@ -6,10 +6,8 @@ language: cpp
 
 env:
   global:
-  - IMAGE_ARCH=amd64
   - DOCKER_EXEC_ROOT="sudo docker exec -it -u root test_container"
   - DOCKER_EXEC="sudo docker exec -it test_container"
-  - DOCKER_EXEC_NOTTY="sudo docker exec test_container"
   - BINTRAY_USER=laarid
   - BINTRAY_REPO=main
   - BINTRAY_COMPONENT=main
@@ -22,20 +20,20 @@ branches:
 
 addons:
   apt:
-    sources:
-    - sourceline: 'deb http://archive.ubuntu.com/ubuntu/ devel universe'
     packages:
-    - binfmt-support
-    - qemu-user-static
-
-cache:
-- apt
+    - dpkg-dev
 
 before_install:
-- sudo docker run -d -i -t --name test_container -v ${TRAVIS_BUILD_DIR%${TRAVIS_REPO_SLUG}}:${TRAVIS_BUILD_DIR%${TRAVIS_REPO_SLUG}} laarid/devel:${IMAGE_ARCH} /bin/bash
+- JOB_SUITE=$(dpkg-parsechangelog | grep ^Distribution | cut -d ' ' -f2)
+- sudo docker run --detach --interactive --tty
+    --name test_container
+    --volume ${TRAVIS_BUILD_DIR%${TRAVIS_REPO_SLUG}}:${TRAVIS_BUILD_DIR%${TRAVIS_REPO_SLUG}}
+    buildpack-deps:${JOB_SUITE}
+    /bin/bash
 
 install:
 - ${DOCKER_EXEC_ROOT} apt-get update -qq
+- ${DOCKER_EXEC_ROOT} apt-get install --no-install-recommends --yes devscripts equivs
 - ${DOCKER_EXEC_ROOT} mk-build-deps -i -s sudo -t 'apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends -y' ${TRAVIS_BUILD_DIR}/debian/control
 
 script:
@@ -53,7 +51,7 @@ before_deploy:
   -e "s#@BINTRAY_RELEASE_DATE@#$(cat debian/changelog | grep -m 1 '^ -- ' | sed 's,^.*  ,,')#g" \
   -e "s#@BINTRAY_OUTDIR@#$(dirname ${TRAVIS_BUILD_DIR})#g" \
   -e "s#@BINTRAY_POOLABBR@#$(cat debian/control | grep ^Source: | awk '{print $2}' | cut -c1)#g" \
-  -e "s#@BINTRAY_SUITE@#$(${DOCKER_EXEC_NOTTY} cat /etc/apt/sources.list | grep -m 1 '^deb ' | awk '{print $3}')#g" \
+  -e "s#@BINTRAY_SUITE@#${JOB_SUITE}#g" \
   -e "s#@BINTRAY_COMPONENT@#${BINTRAY_COMPONENT}#g" \
   -e "s#@BINTRAY_ARCH@#${BINTRAY_ARCH}#g" | \
   tee debian/bintray.json
