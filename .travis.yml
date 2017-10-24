@@ -4,8 +4,8 @@ services:
 
 env:
   global:
-  - DOCKER_EXEC_ROOT="sudo docker exec -it -u root test_container"
-  - DOCKER_EXEC="sudo docker exec -it test_container"
+  - DOCKER_EXEC_ROOT="sudo docker exec --tty --user root test_container"
+  - DOCKER_EXEC="sudo docker exec --tty test_container"
   - BINTRAY_USER=laarid
   - BINTRAY_REPO=main
   - BINTRAY_COMPONENT=main
@@ -25,9 +25,11 @@ before_install:
     /bin/bash
 
 install:
-- ${DOCKER_EXEC_ROOT} apt-get update -qq
+- ${DOCKER_EXEC_ROOT} apt-get update --quiet --quiet
 - ${DOCKER_EXEC_ROOT} apt-get install --no-install-recommends --yes devscripts equivs
-- ${DOCKER_EXEC_ROOT} mk-build-deps -i -s sudo -t 'apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends -y' ${TRAVIS_BUILD_DIR}/debian/control
+- ${DOCKER_EXEC_ROOT} mk-build-deps --install
+    --tool 'apt-get --option Debug::pkgProblemResolver=yes --no-install-recommends --yes'
+    ${TRAVIS_BUILD_DIR}/debian/control
 
 script:
 - ${DOCKER_EXEC} /bin/sh -c "cd ${TRAVIS_BUILD_DIR}; debuild --preserve-env --preserve-envvar PATH -i -us -uc -b"
